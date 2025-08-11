@@ -1,0 +1,76 @@
+version: "3.9"
+
+services:
+  # haproxy:
+  #   image: haproxy:latest
+  #   ports:
+  #     - "9999:9999"
+  #   depends_on:
+  #     - minha-api-1
+  #     - minha-api-2
+  #   volumes:
+  #     - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '0.1'
+  #         memory: '30MB'
+  #   networks:
+  #     - backend
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "9999:9999"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    networks:
+      - backend
+    depends_on:
+      - app1
+      - app2
+    deploy:
+      resources:
+        limits:
+          cpus: "0.30"
+          memory: "100MB"
+
+  app1:
+    image: minha-api:latest
+    deploy:
+      resources:
+        limits:
+          cpus: '0.6'
+          memory: '125MB'
+    networks:
+      - backend
+      - payment-processor
+    environment:
+      PORT: :9999
+      URL_PROCESSOR_DEFAULT: http://payment-processor-default:8080/payments
+      URL_PROCESSOR_FALLBACK: http://payment-processor-fallback:8080/payments
+      URL_HEALTH_DEFAULT: http://payment-processor-default:8080/payments/service-health
+      URL_HEALTH_FALLBACK: http://payment-processor-fallback:8080/payments/service-health
+
+  app2:
+    image: minha-api:latest
+    deploy:
+      resources:
+        limits:
+          cpus: '0.6'
+          memory: '125MB'
+    networks:
+      - backend
+      - payment-processor
+    environment:
+      PORT: :9999
+      URL_PROCESSOR_DEFAULT: http://payment-processor-default:8080/payments
+      URL_PROCESSOR_FALLBACK: http://payment-processor-fallback:8080/payments
+      URL_HEALTH_DEFAULT: http://payment-processor-default:8080/payments/service-health
+      URL_HEALTH_FALLBACK: http://payment-processor-fallback:8080/payments/service-health
+
+networks:
+  backend:
+    driver: bridge
+  payment-processor:
+    external: true

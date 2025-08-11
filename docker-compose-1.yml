@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+  haproxy:
+    image: haproxy:latest
+    ports:
+      - "9999:9999"
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    deploy:
+      resources:
+        limits:
+          cpus: "0.30"
+          memory: "100M"
+    networks:
+      - backend
+
+  minha-api:
+    image: minha-api:latest
+    restart: always
+    networks:
+      - backend
+      - payment-processor
+    deploy:
+      resources:
+        limits:
+          cpus: '1.2'
+          memory: '250MB'
+    ports:
+      - "9999:9999"
+    environment:
+      PORT: :9999
+      URL_PROCESSOR_DEFAULT: http://payment-processor-default:8080/payments
+      URL_PROCESSOR_FALLBACK: http://payment-processor-fallback:8080/payments
+      URL_HEALTH_DEFAULT:  http://payment-processor-default:8080/payments/service-health
+      URL_HEALTH_FALLBACK: http://payment-processor-fallback:8080/payments/service-health
+
+  # minha-api-2:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   image: minha-api:latest
+  #   restart: always
+  #   ports:
+  #     - "9999:9999"
+  #   environment:
+  #     PORT: :9999
+  #     URL_PROCESSOR_DEFAULT: http://payment-processor-default:8080/payments
+  #     URL_PROCESSOR_FALLBACK: http://payment-processor-fallback:8080/payments
+  #     URL_HEALTH_DEFAULT:  http://payment-processor-default:8080/payments/service-health
+  #     URL_HEALTH_FALLBACK: http://payment-processor-fallback:8080/payments/service-health
+
+networks:
+  backend:
+    driver: bridge
+  payment-processor:
+    external: true
